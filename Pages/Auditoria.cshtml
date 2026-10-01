@@ -1,0 +1,50 @@
+@page
+@model AuditoriaModel
+@{
+    ViewData["Title"] = "Libro de Registro de Accesos";
+}
+
+<div class="container py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Libro de Registro de Entradas y Salidas</h2>
+        <a asp-page="/Index" class="btn btn-outline-primary">← Puesto de Guardia</a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Fecha y Hora</th>
+                            <th>Movimiento</th>
+                            <th>Visitante / Empresa</th>
+                            <th>DNI</th>
+                            <th>Vehículo</th>
+                            <th>Destino</th>
+                            <th>Operador</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var log in Model.Registros)
+                        {
+                            <tr>
+                                <td class="fw-bold">@log.FechaHoraExacta.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                                <td>
+                                    <span class="badge @(log.TipoMovimiento == "ENTRADA" ? "bg-success" : "bg-danger") px-2 py-1">
+                                        @log.TipoMovimiento
+                                    </span>
+                                </td>
+                                <td>@(log.Visita?.VisitanteEmpresa ?? "N/A")</td>
+                                <td>@(log.Visita?.Dni ?? "-")</td>
+                                <td>@(log.Visita?.Matricula ?? "A pie")</td>
+                                <td>@(log.Visita?.ContactoDestino ?? "-")</td>
+                                <td><span class="badge bg-light text-dark border">@log.Operador</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,198 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Puesto de Guardia - Control de Accesos";
+}
+
+<div class="container-fluid py-2">
+    <!-- BARRA DE COMUNICADOS DEL DÍA -->
+    <div class="row mb-3" id="contenedor-avisos">
+        <div class="col-12" id="lista-avisos">
+            @foreach (var c in Model.ComunicadosActivos)
+            {
+                <div class="alert @(c.Prioridad == "Urgente" ? "alert-danger border-3" : "alert-info") d-flex align-items-center py-2 mb-2 shadow-sm" id="aviso-@c.Id" role="alert">
+                    <span class="badge @(c.Prioridad == "Urgente" ? "bg-danger" : "bg-primary") me-2 fs-6">@c.Prioridad.ToUpper()</span>
+                    <strong class="me-2">@c.Titulo:</strong> @c.Detalle
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- TABLERO PRINCIPAL DE GARITA -->
+    <div class="row g-3">
+        <!-- COLUMNA 1: PREVISTOS -->
+        <div class="col-md-6">
+            <div class="card shadow-sm border-primary">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold">1. PREVISTOS PARA HOY</h5>
+                    <span class="badge bg-light text-primary fs-6" id="count-previstos">@Model.PrevistasHoy.Count</span>
+                </div>
+                <div class="card-body bg-light" id="col-previstos" style="min-height: 65vh;">
+                    @foreach (var v in Model.PrevistasHoy)
+                    {
+                        <div class="card mb-3 shadow-sm border-0 tarjeta-visita" id="visita-@v.Id">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <h5 class="card-title fw-bold text-dark mb-1">@v.VisitanteEmpresa</h5>
+                                    <span class="badge bg-secondary">Previsto @v.FechaHoraPrevista.ToString("HH:mm")</span>
+                                </div>
+                                <p class="card-text text-muted mb-2">
+                                    <strong>DNI:</strong> @v.Dni | <strong>Vehículo:</strong> @(v.Matricula ?? "A pie")<br/>
+                                    <strong>Destino:</strong> @v.ContactoDestino
+                                    @if (!string.IsNullOrEmpty(v.Observaciones))
+                                    {
+                                        <br/><small class="text-primary"><em>Obs: @v.Observaciones</em></small>
+                                    }
+                                </p>
+                                <button class="btn btn-success btn-lg w-100 fw-bold py-2 shadow-sm" onclick="cambiarEstado(@v.Id, 1)">
+                                    ✔ REGISTRAR ENTRADA
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUMNA 2: EN RECINTO -->
+        <div class="col-md-6">
+            <div class="card shadow-sm border-success">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold">2. EN RECINTO (DENTRO)</h5>
+                    <span class="badge bg-light text-success fs-6" id="count-enrecinto">@Model.EnRecinto.Count</span>
+                </div>
+                <div class="card-body bg-light" id="col-enrecinto" style="min-height: 65vh;">
+                    @foreach (var v in Model.EnRecinto)
+                    {
+                        <div class="card mb-3 shadow-sm border-0 tarjeta-visita" id="visita-@v.Id">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <h5 class="card-title fw-bold text-dark mb-1">@v.VisitanteEmpresa</h5>
+                                    <span class="badge bg-success">DENTRO</span>
+                                </div>
+                                <p class="card-text text-muted mb-2">
+                                    <strong>DNI:</strong> @v.Dni | <strong>Vehículo:</strong> @(v.Matricula ?? "A pie")<br/>
+                                    <strong>Destino:</strong> @v.ContactoDestino
+                                    @if (!string.IsNullOrEmpty(v.Observaciones))
+                                    {
+                                        <br/><small class="text-primary"><em>Obs: @v.Observaciones</em></small>
+                                    }
+                                </p>
+                                <button class="btn btn-warning btn-lg w-100 fw-bold py-2 shadow-sm" onclick="cambiarEstado(@v.Id, 2)">
+                                    ➜ REGISTRAR SALIDA
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/signalr.min.js"></script>
+    <script>
+        // 1. Conexión WebSocket vía SignalR
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/accesosHub")
+            .withAutomaticReconnect()
+            .build();
+
+        // 2. Escuchar alta de nueva visita desde el supervisor en tiempo real
+        connection.on("NuevaVisitaCreada", function (v) {
+            const contenedor = document.getElementById("col-previstos");
+            
+            let obsHtml = "";
+            if (v.observaciones) {
+                obsHtml = `<br/><small class="text-primary"><em>Obs: ${v.observaciones}</em></small>`;
+            }
+
+            const htmlCard = `
+                <div class="card mb-3 shadow-sm border-0 tarjeta-visita" id="visita-${v.id}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <h5 class="card-title fw-bold text-dark mb-1">${v.visitanteEmpresa}</h5>
+                            <span class="badge bg-secondary">Previsto ${v.horaPrevista}</span>
+                        </div>
+                        <p class="card-text text-muted mb-2">
+                            <strong>DNI:</strong> ${v.dni} | <strong>Vehículo:</strong> ${v.matricula}<br/>
+                            <strong>Destino:</strong> ${v.contactoDestino}
+                            ${obsHtml}
+                        </p>
+                        <button class="btn btn-success btn-lg w-100 fw-bold py-2 shadow-sm" onclick="cambiarEstado(${v.id}, 1)">
+                            ✔ REGISTRAR ENTRADA
+                        </button>
+                    </div>
+                </div>
+            `;
+            contenedor.insertAdjacentHTML('afterbegin', htmlCard);
+            actualizarContadores();
+        });
+
+        // 3. Escuchar nuevo aviso publicado
+        connection.on("NuevoAvisoPublicado", function (a) {
+            const lista = document.getElementById("lista-avisos");
+            const esUrgente = a.prioridad === "Urgente";
+            const alertClass = esUrgente ? "alert-danger border-3" : "alert-info";
+            const badgeClass = esUrgente ? "bg-danger" : "bg-primary";
+
+            const htmlAviso = `
+                <div class="alert ${alertClass} d-flex align-items-center py-2 mb-2 shadow-sm" id="aviso-${a.id}" role="alert">
+                    <span class="badge ${badgeClass} me-2 fs-6">${a.prioridad.toUpperCase()}</span>
+                    <strong class="me-2">${a.titulo}:</strong> ${a.detalle}
+                </div>
+            `;
+            lista.insertAdjacentHTML('afterbegin', htmlAviso);
+        });
+
+        // 4. Escuchar aviso retirado desde el panel de supervisor
+        connection.on("AvisoRetirado", function (id) {
+            const aviso = document.getElementById("aviso-" + id);
+            if (aviso) aviso.remove();
+        });
+
+        // 5. Escuchar cambio de estado (Entrada / Salida)
+        connection.on("VisitaActualizada", function (data) {
+            const card = document.getElementById("visita-" + data.visitaId);
+            if (!card) return;
+
+            if (data.nuevoEstado === 1) { // Pasa a En Recinto
+                document.getElementById("col-enrecinto").prepend(card);
+                const btn = card.querySelector("button");
+                btn.className = "btn btn-warning btn-lg w-100 fw-bold py-2 shadow-sm";
+                btn.innerText = "➜ REGISTRAR SALIDA";
+                btn.setAttribute("onclick", `cambiarEstado(${data.visitaId}, 2)`);
+                
+                const badge = card.querySelector(".badge");
+                if (badge) {
+                    badge.className = "badge bg-success";
+                    badge.innerText = "DENTRO";
+                }
+            } else if (data.nuevoEstado === 2) { // Pasa a Salida
+                card.remove();
+            }
+            actualizarContadores();
+        });
+
+        connection.start().catch(err => console.error(err.toString()));
+
+        // 6. Enviar petición para registrar Entrada o Salida
+        async function cambiarEstado(visitaId, nuevoEstado) {
+            try {
+                await fetch('/api/visitas/cambiar-estado', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ visitaId: visitaId, nuevoEstado: nuevoEstado, operador: 'Garita' })
+                });
+            } catch (error) {
+                alert("Error de comunicación con el servidor.");
+            }
+        }
+
+        function actualizarContadores() {
+            document.getElementById("count-previstos").innerText = document.getElementById("col-previstos").querySelectorAll(".tarjeta-visita").length;
+            document.getElementById("count-enrecinto").innerText = document.getElementById("col-enrecinto").querySelectorAll(".tarjeta-visita").length;
+        }
+    </script>
+}

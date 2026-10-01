@@ -1,0 +1,146 @@
+@page
+@model SupervisorModel
+@{
+    ViewData["Title"] = "Panel de Supervisor";
+}
+
+<div class="container py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Panel de Gestión y Autorizaciones</h2>
+        <a asp-page="/Index" class="btn btn-outline-primary">← Ir al Puesto de Guardia</a>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.MensajeExito))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @Model.MensajeExito
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- FORMULARIO 1: NUEVA VISITA PREVISTA -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white fw-bold">
+                    Registrar Previsión de Acceso
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" asp-page-handler="CrearVisita">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Visitante / Empresa</label>
+                            <input asp-for="NuevaVisita.VisitanteEmpresa" class="form-control" required />
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">DNI / Documento</label>
+                                <input asp-for="NuevaVisita.Dni" class="form-control" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Matrícula (opcional)</label>
+                                <input asp-for="NuevaVisita.Matricula" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Destino</label>
+                                <input asp-for="NuevaVisita.ContactoDestino" class="form-control" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Fecha/Hora Prevista</label>
+                                <input asp-for="NuevaVisita.FechaHoraPrevista" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" step="60" class="form-control" required />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Observaciones</label>
+                            <textarea asp-for="NuevaVisita.Observaciones" class="form-control" rows="2"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Autorizar y Enviar a Garita</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- GESTIÓN Y PUBLICACIÓN DE AVISOS -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-secondary text-white fw-bold">
+                    Publicar Aviso del Día para Garita
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" asp-page-handler="CrearComunicado">
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-7">
+                                <label class="form-label fw-semibold">Título del Aviso</label>
+                                <input asp-for="NuevoComunicado.Titulo" class="form-control" required />
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label fw-semibold">Prioridad</label>
+                                <select asp-for="NuevoComunicado.Prioridad" class="form-select">
+                                    <option value="Normal">Normal (Azul)</option>
+                                    <option value="Urgente">Urgente (Rojo)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Válido hasta (Caducidad automática)</label>
+                            <input asp-for="NuevoComunicado.FechaExpiracion" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" step="60" class="form-control" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Detalle del Aviso</label>
+                            <textarea asp-for="NuevoComunicado.Detalle" class="form-control" rows="2" required></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-outline-secondary w-100 py-2 fw-bold">Publicar Aviso</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- TABLA DE AVISOS VIGENTES CON RETIRADA INMEDIATA -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light fw-bold d-flex justify-content-between align-items-center">
+                    <span>Avisos Vigentes en Pantalla</span>
+                    <span class="badge bg-secondary">@Model.AvisosVigentes.Count activos</span>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush" id="lista-avisos-supervisor">
+                        @foreach (var a in Model.AvisosVigentes)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center" id="aviso-sup-@a.Id">
+                                <div>
+                                    <span class="badge @(a.Prioridad == "Urgente" ? "bg-danger" : "bg-primary") me-1">@a.Prioridad</span>
+                                    <strong>@a.Titulo</strong>
+                                    <br/><small class="text-muted">Expira: @a.FechaExpiracion.ToString("dd/MM HH:mm")</small>
+                                </div>
+                                <button class="btn btn-sm btn-outline-danger" onclick="retirarAviso(@a.Id)">Retirar</button>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function retirarAviso(id) {
+            if (!confirm("¿Retirar este comunicado de la pantalla de garita?")) return;
+            try {
+                const res = await fetch(`/api/comunicados/retirar/${id}`, { method: 'POST' });
+                if (res.ok) {
+                    const elem = document.getElementById("aviso-sup-" + id);
+                    if (elem) elem.remove();
+                }
+            } catch (err) {
+                alert("Error al retirar el comunicado.");
+            }
+        }
+    </script>
+}
