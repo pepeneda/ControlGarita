@@ -1,0 +1,143 @@
+@page
+@model AdminSeguridadModel
+@{
+    ViewData["Title"] = "Administración de Seguridad - Puestos y PIN";
+}
+
+<div class="container py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="fw-bold text-dark mb-0">⚙ Administración de Puestos y Seguridad</h3>
+        <a asp-page="/Supervisor" class="btn btn-outline-secondary">⬅ Volver al Panel</a>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.MensajeExito))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong>✔ Operación completada:</strong> @Model.MensajeExito
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- TARJETA 1: GESTIÓN DE PIN -->
+        <div class="col-md-5">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-dark text-white fw-bold">
+                    🔑 PIN de Acceso de Garita
+                </div>
+                <div class="card-body">
+                    <p class="mb-2 text-muted">PIN vigente configurado actualmente:</p>
+                    <h2 class="text-primary fw-bold tracking-wide mb-3">@Model.PinActual</h2>
+
+                    <form method="post" asp-page-handler="CambiarPin">
+                        <label class="form-label fw-semibold">Asignar Nuevo PIN</label>
+                        <div class="input-group mb-3">
+                            <input asp-for="NuevoPin" type="text" class="form-control fs-5 text-center fw-bold" maxlength="8" placeholder="Ej: 5678" required />
+                            <button class="btn btn-success fw-bold" type="submit">Actualizar PIN</button>
+                        </div>
+                        <small class="text-muted">El cambio es instantáneo. No requiere reiniciar la aplicación.</small>
+                    </form>
+                </div>
+            </div>
+
+            <!-- TARJETA 2: GENERAR VINCULACIÓN -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white fw-bold">
+                    🔗 Autorizar Nuevo Puesto Físico
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">
+                        Genera un código temporal para autorizar el navegador del equipo de la garita. Vence en 15 minutos.
+                    </p>
+
+                    @if (!string.IsNullOrEmpty(Model.CodigoGenerado))
+                    {
+                        <div class="text-center p-3 mb-3 bg-light border rounded">
+                            <div class="text-muted small mb-1">CÓDIGO DE ENLACE TEMPORAL</div>
+                            <span class="display-5 fw-bold text-success letter-spacing">@Model.CodigoGenerado</span>
+                            <div class="text-danger small mt-2">Díctalo o introdúcelo en el PC de garita ahora</div>
+                        </div>
+                    }
+
+                    <form method="post" asp-page-handler="GenerarCodigo">
+                        <button type="submit" class="btn btn-outline-primary w-100 fw-bold py-2">
+                            ➕ Generar Código de Enlace
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- TARJETA 3: LISTADO DE EQUIPOS VINCULADOS -->
+        <div class="col-md-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-secondary text-white fw-bold d-flex justify-content-between align-items-center">
+                    <span>💻 Equipos y Navegadores Autorizados</span>
+                    <span class="badge bg-light text-dark">@Model.Puestos.Count(p => p.Activo) Activos</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Puesto</th>
+                                    <th>IP / Registro</th>
+                                    <th>Última Actividad</th>
+                                    <th>Estado</th>
+                                    <th class="text-end">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (!Model.Puestos.Any())
+                                {
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-4">
+                                            No hay equipos vinculados todavía.
+                                        </td>
+                                    </tr>
+                                }
+                                @foreach (var p in Model.Puestos)
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong>@p.NombrePuesto</strong>
+                                        </td>
+                                        <td>
+                                            <code>@p.IpVinculacion</code><br />
+                                            <small class="text-muted">@p.FechaVinculacion.ToString("dd/MM/yyyy")</small>
+                                        </td>
+                                        <td>
+                                            <small>@p.UltimaActividad.ToString("dd/MM HH:mm")</small>
+                                        </td>
+                                        <td>
+                                            @if (p.Activo)
+                                            {
+                                                <span class="badge bg-success">Autorizado</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger">Revocado</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            @if (p.Activo)
+                                            {
+                                                <form method="post" asp-page-handler="RevocarPuesto" asp-route-id="@p.Id" class="d-inline" onsubmit="return confirm('¿Seguro que deseas expulsar y revocar este equipo?');">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">Revocar</button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">Inactivo</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

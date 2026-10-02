@@ -4,7 +4,7 @@
     ViewData["Title"] = "Acceso al Sistema";
 }
 
-<div class="row justify-content-center pt-5">
+<div class="row justify-content-center pt-4">
     <div class="col-md-5 col-lg-4">
         <div class="card shadow border-0">
             <div class="card-header bg-dark text-white text-center py-3">
@@ -19,8 +19,13 @@
                         @Model.ErrorMensaje
                     </div>
                 }
+                @if (!string.IsNullOrEmpty(Model.ExitoMensaje))
+                {
+                    <div class="alert alert-success py-2 text-center" role="alert">
+                        @Model.ExitoMensaje
+                    </div>
+                }
 
-                <!-- Pestañas para elegir modo -->
                 <ul class="nav nav-pills nav-fill mb-3" id="tabAcceso" role="tablist">
                     <li class="nav-item">
                         <button class="nav-link active fw-bold" id="garita-tab" type="button" onclick="setModo('Garita')">
@@ -34,19 +39,50 @@
                     </li>
                 </ul>
 
-                <form method="post" asp-route-returnUrl="@ViewData["ReturnUrl"]">
-                    <input type="hidden" asp-for="ModoAcceso" id="modoInput" value="Garita" />
-
-                    <!-- Formulario Garita -->
-                    <div id="seccion-garita">
-                        <div class="mb-3 text-center">
-                            <label class="form-label fw-semibold">Introduce el PIN de Puesto</label>
-                            <input asp-for="PinGarita" type="password" maxlength="8" class="form-control form-control-lg text-center fs-2 letter-spacing" autofocus />
+                <!-- SECCIÓN GARITA -->
+                <div id="seccion-garita">
+                    @if (Model.EquipoVinculado)
+                    {
+                        <div class="alert alert-light border text-center py-2 mb-3">
+                            <span class="badge bg-success me-1">✔</span> <small class="text-success fw-bold">Dispositivo Autorizado</small>
                         </div>
-                    </div>
+                        <form method="post" asp-route-returnUrl="@ViewData["ReturnUrl"]">
+                            <input type="hidden" asp-for="ModoAcceso" value="Garita" />
+                            <div class="mb-3 text-center">
+                                <label class="form-label fw-semibold">Introduce el PIN de Puesto</label>
+                                <input asp-for="PinGarita" type="password" maxlength="8" class="form-control form-control-lg text-center fs-2" autofocus />
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">
+                                Entrar al Puesto
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning text-center py-2 mb-3">
+                            <small class="fw-bold">⚠ Equipo no vinculado</small><br />
+                            <small>Para operar aquí, introduce el código temporal generado por el supervisor.</small>
+                        </div>
+                        <form method="post" asp-page-handler="Vincular">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Nombre para este equipo</label>
+                                <input asp-for="NombreEquipo" class="form-control" placeholder="Ej: Puesto Garita 1" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Código de Enlace (6 dígitos)</label>
+                                <input asp-for="CodigoVinculacion" class="form-control form-control-lg text-center fs-3 tracking-wide" maxlength="6" placeholder="000000" required />
+                            </div>
+                            <button type="submit" class="btn btn-warning w-100 fw-bold">
+                                🔗 Vincular este Navegador
+                            </button>
+                        </form>
+                    }
+                </div>
 
-                    <!-- Formulario Contingencia Supervisor -->
-                    <div id="seccion-supervisor" style="display: none;">
+                <!-- SECCIÓN CONTINGENCIA SUPERVISOR -->
+                <div id="seccion-supervisor" style="display: none;">
+                    <form method="post" asp-route-returnUrl="@ViewData["ReturnUrl"]">
+                        <input type="hidden" asp-for="ModoAcceso" value="Supervisor" />
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Usuario Local</label>
                             <input asp-for="UsuarioAdmin" class="form-control" autocomplete="off" />
@@ -56,14 +92,13 @@
                             <input asp-for="PasswordAdmin" type="password" class="form-control" />
                         </div>
                         <div class="form-text text-muted mb-3">
-                            Uso exclusivo si Active Directory / Dominio no está disponible.
+                            Uso exclusivo si Active Directory no está disponible.
                         </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">
-                        Entrar al Sistema
-                    </button>
-                </form>
+                        <button type="submit" class="btn btn-danger btn-lg w-100 fw-bold shadow-sm">
+                            Entrar como Supervisor
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -72,7 +107,6 @@
 @section Scripts {
     <script>
         function setModo(modo) {
-            document.getElementById("modoInput").value = modo;
             const secGarita = document.getElementById("seccion-garita");
             const secSup = document.getElementById("seccion-supervisor");
             const btnGarita = document.getElementById("garita-tab");

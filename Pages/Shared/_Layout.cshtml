@@ -1,5 +1,6 @@
 ﻿<!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,13 +9,14 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/ControlGarita.styles.css" asp-append-version="true" />
 </head>
+
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom shadow-sm mb-3">
             <div class="container-fluid px-4">
                 <a class="navbar-brand fw-bold text-primary" asp-area="" asp-page="/Index">🛡 ControlGarita</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
+                        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
@@ -22,59 +24,67 @@
                         @if (User.Identity?.IsAuthenticated == true)
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark fw-semibold" asp-area="" asp-page="/Index">Puesto de Guardia</a>
-                            </li>
-                            @* Solo mostramos Supervisor y Auditoría si es Supervisor o Administrador *@
-                            @if (User.IsInRole("Supervisor") || User.Identity?.AuthenticationType == "Negotiate")
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark fw-semibold" asp-area="" asp-page="/Supervisor">📋 Supervisor</a>
+                                <a class="nav-link text-dark fw-semibold" asp-area="" asp-page="/Index">Puesto de
+                                    Guardia</a>
                                 </li>
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark fw-semibold" asp-area="" asp-page="/Auditoria">📜 Libro de Registro</a>
-                                </li>
-                            }
-                        }
-                    </ul>
-                    <ul class="navbar-nav ms-auto align-items-center">
-                        @if (User.Identity?.IsAuthenticated == true)
-                        {
-                            <li class="nav-item me-3 text-secondary">
-                                <small>Sesión: <strong class="text-dark">@User.Identity.Name</strong></small>
-                            </li>
-                            <li class="nav-item">
-                                <form method="post" asp-page="/Login" asp-page-handler="Logout" class="d-inline">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Cerrar Sesión</button>
-                                </form>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="btn btn-sm btn-outline-primary" asp-page="/Login">Iniciar Sesión</a>
-                            </li>
-                        }
-                    </ul>
+                                @* Solo mostramos Supervisor y Auditoría si es Supervisor o Administrador *@
+                                @if (User.IsInRole("Supervisor") || User.Identity?.AuthenticationType == "Negotiate")
+                                {
+                                    <li class="nav-item">
+                                        <a class="nav-link text-dark fw-semibold" asp-area="" asp-page="/Supervisor">📋
+                                            Supervisor</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link text-dark fw-semibold" asp-area="" asp-page="/Auditoria">📜 Libro de
+                                                Registro</a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a class="nav-link text-dark fw-semibold text-danger" asp-area=""
+                                                   asp-page="/AdminSeguridad">⚙ Seguridad</a>
+                                            </li>
+                                        }
+                                    }
+                                </ul>
+                                <ul class="navbar-nav ms-auto align-items-center">
+                                    @if (User.Identity?.IsAuthenticated == true)
+                                    {
+                                        <li class="nav-item me-3 text-secondary">
+                                            <small>Sesión: <strong class="text-dark">@User.Identity.Name</strong></small>
+                                        </li>
+                                        <li class="nav-item">
+                                            <form method="post" asp-page="/Login" asp-page-handler="Logout" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Cerrar Sesión</button>
+                                            </form>
+                                        </li>
+                                    }
+                                    else
+                                    {
+                                        <li class="nav-item">
+                                            <a class="btn btn-sm btn-outline-primary" asp-page="/Login">Iniciar Sesión</a>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    </nav>
+                </header>
+                <div class="container-fluid px-4">
+                    <main role="main" class="pb-3">
+                        @RenderBody()
+                    </main>
                 </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container-fluid px-4">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top footer text-muted mt-auto py-2">
-        <div class="container-fluid px-4 text-center">
-            <small>&copy; 2026 - Control de Accesos y Seguridad</small>
-        </div>
-    </footer>
+                <footer class="border-top footer text-muted mt-auto py-2">
+                    <div class="container-fluid px-4 text-center">
+                        <small>&copy; 2026 - Control de Accesos y Seguridad</small>
+                    </div>
+                </footer>
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+                <script src="~/lib/jquery/dist/jquery.min.js"></script>
+                <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+                <script src="~/js/site.js" asp-append-version="true"></script>
 
-    @await RenderSectionAsync("Scripts", required: false)
-</body>
-</html>
+                @await RenderSectionAsync("Scripts", required: false)
+            </body>
+
+        </html>

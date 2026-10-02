@@ -12,4 +12,7 @@ public class AppDbContext : DbContext
     public DbSet<Visita> Visitas => Set<Visita>();
     public DbSet<RegistroLog> Logs => Set<RegistroLog>();
     public DbSet<Comunicado> Comunicados => Set<Comunicado>();
+    public DbSet<ConfiguracionSistema> Configuraciones { get; set; }
+    public DbSet<PuestoAutorizado> PuestosAutorizados { get; set; }
+    public DbSet<CodigoEnlaceTemporal> CodigosEnlace { get; set; }
 }

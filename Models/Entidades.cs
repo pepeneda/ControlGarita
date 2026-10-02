@@ -60,3 +60,33 @@ public class Comunicado
     public bool Activo { get; set; } = true;
     public string Prioridad { get; set; } = "Normal";
 }
+
+public class ConfiguracionSistema
+{
+    [Key]
+    public string Clave { get; set; } = string.Empty; // Ej: "PinGarita"
+    public string Valor { get; set; } = string.Empty;
+    public DateTime FechaModificacion { get; set; } = DateTime.Now;
+    public string ModificadoPor { get; set; } = "Sistema";
+}
+
+public class PuestoAutorizado
+{
+    public int Id { get; set; }
+    public string NombrePuesto { get; set; } = "Garita Principal";
+    public string TokenIdentificador { get; set; } = Guid.NewGuid().ToString("N");
+    public string? IpVinculacion { get; set; }
+    public string? UserAgent { get; set; }
+    public DateTime FechaVinculacion { get; set; } = DateTime.Now;
+    public DateTime UltimaActividad { get; set; } = DateTime.Now;
+    public bool Activo { get; set; } = true;
+}
+
+public class CodigoEnlaceTemporal
+{
+    public int Id { get; set; }
+    public string Codigo { get; set; } = string.Empty; // Código corto tipo 6 dígitos: "784920"
+    public DateTime FechaExpiracion { get; set; }
+    public bool Utilizado { get; set; } = false;
+    public string CreadoPor { get; set; } = string.Empty;
+}

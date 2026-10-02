@@ -63,6 +63,7 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddRazorPages();
 builder.Services.AddSignalR();
+builder.Services.AddScoped<ControlGarita.Services.GaritaSecurityService>();
 
 var app = builder.Build();
 
