@@ -25,22 +25,26 @@ public class IndexModel : PageModel
         var limiteHoy = DateTime.Today.AddDays(1);
 
         // Cargar avisos activos ordenando primero los urgentes
-       ComunicadosActivos = await _context.Comunicados
-            .Where(c => c.Activo && c.FechaExpiracion > DateTime.Now)
-            .OrderByDescending(c => c.Prioridad == "Urgente")
-            .ThenByDescending(c => c.FechaPublicacion)
-            .ToListAsync();
+        ComunicadosActivos = await _context.Comunicados
+             .Where(c => c.Activo && c.FechaExpiracion > DateTime.Now)
+             .OrderByDescending(c => c.Prioridad == "Urgente")
+             .ThenByDescending(c => c.FechaPublicacion)
+             .ToListAsync();
 
-        // Cargar visitas en estado 'Previsto' hasta el final del día de hoy
+        var ahora = DateTime.Now;
+
+        // Previstas: autorizadas activas que NO están dentro del recinto
         PrevistasHoy = await _context.Visitas
-            .Where(v => v.Estado == EstadoAcceso.Previsto && v.FechaHoraPrevista < limiteHoy)
-            .OrderBy(v => v.FechaHoraPrevista)
+            .Where(v => v.Estado == EstadoAcceso.Previsto
+                     && v.FechaInicio <= ahora
+                     && v.FechaFin >= ahora)
+            .OrderBy(v => v.VisitanteEmpresa)
             .ToListAsync();
 
-        // Cargar visitas que ya están dentro del recinto
+        // En recinto: los que actualmente están dentro (independientemente de la fecha inicial)
         EnRecinto = await _context.Visitas
             .Where(v => v.Estado == EstadoAcceso.EnRecinto)
-            .OrderByDescending(v => v.Id)
+            .OrderBy(v => v.VisitanteEmpresa)
             .ToListAsync();
     }
 }

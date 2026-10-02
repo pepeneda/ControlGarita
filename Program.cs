@@ -91,7 +91,7 @@ app.UseAuthorization();
 app.MapRazorPages();
 app.MapHub<AccesosHub>("/accesosHub");
 
-// Endpoint: Cambiar estado Visita
+// Endpoint: Cambiar estado Visita (Entrada / Salida con soporte multiría)
 app.MapPost("/api/visitas/cambiar-estado", async (
     [FromBody] CambiarEstadoRequest req, 
     AppDbContext db, 
@@ -100,24 +100,47 @@ app.MapPost("/api/visitas/cambiar-estado", async (
     var visita = await db.Visitas.FindAsync(req.VisitaId);
     if (visita == null) return Results.NotFound();
 
-    visita.Estado = req.NuevoEstado;
+    var ahora = DateTime.Now;
+    string tipoMovimiento;
+
+    if (req.Accion == "ENTRADA")
+    {
+        visita.Estado = EstadoAcceso.EnRecinto;
+        tipoMovimiento = "ENTRADA";
+    }
+    else // "SALIDA"
+    {
+        tipoMovimiento = "SALIDA";
+
+        // Si la autorización sigue en vigor, vuelve a "Previsto" para siguientes días/accesos
+        if (visita.FechaFin >= ahora)
+        {
+            visita.Estado = EstadoAcceso.Previsto;
+        }
+        else
+        {
+            visita.Estado = EstadoAcceso.Completada; // Ya venció el rango
+        }
+    }
 
     var log = new RegistroLog
     {
         VisitaId = visita.Id,
-        TipoMovimiento = req.NuevoEstado == EstadoAcceso.EnRecinto ? "ENTRADA" : "SALIDA",
-        FechaHoraExacta = DateTime.Now,
+        TipoMovimiento = tipoMovimiento,
+        FechaHoraExacta = ahora,
         Operador = string.IsNullOrWhiteSpace(req.Operador) ? "Garita" : req.Operador
     };
     db.Logs.Add(log);
     await db.SaveChangesAsync();
 
+    // Notificar a clientes conectados vía SignalR
     await hub.Clients.All.SendAsync("VisitaActualizada", new
     {
         visitaId = visita.Id,
         nuevoEstado = (int)visita.Estado,
-        horaLog = log.FechaHoraExacta.ToString("HH:mm:ss"),
-        tipoMovimiento = log.TipoMovimiento
+        tipoMovimiento = log.TipoMovimiento,
+        sigueVigente = visita.FechaFin >= ahora,
+        fechaFinStr = visita.FechaFin.ToString("dd/MM/yyyy HH:mm")
     });
 
     return Results.Ok();
@@ -142,4 +165,4 @@ app.MapPost("/api/comunicados/retirar/{id:int}", async (
 
 app.Run();
 
-public record CambiarEstadoRequest(int VisitaId, EstadoAcceso NuevoEstado, string? Operador);
+public record CambiarEstadoRequest(int VisitaId, string Accion, string? Operador);

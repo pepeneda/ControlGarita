@@ -20,11 +20,11 @@
 
     <!-- TABLERO PRINCIPAL DE GARITA -->
     <div class="row g-3">
-        <!-- COLUMNA 1: PREVISTOS -->
+        <!-- COLUMNA 1: AUTORIZADOS / FUERA -->
         <div class="col-md-6">
             <div class="card shadow-sm border-primary">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold">1. PREVISTOS PARA HOY</h5>
+                    <h5 class="mb-0 fw-bold">1. AUTORIZADOS / FUERA</h5>
                     <span class="badge bg-light text-primary fs-6" id="count-previstos">@Model.PrevistasHoy.Count</span>
                 </div>
                 <div class="card-body bg-light" id="col-previstos" style="min-height: 65vh;">
@@ -32,9 +32,9 @@
                     {
                         <div class="card mb-3 shadow-sm border-0 tarjeta-visita" id="visita-@v.Id">
                             <div class="card-body">
-                                <div class="d-flex justify-content-between">
+                                <div class="d-flex justify-content-between align-items-start">
                                     <h5 class="card-title fw-bold text-dark mb-1">@v.VisitanteEmpresa</h5>
-                                    <span class="badge bg-secondary">Previsto @v.FechaHoraPrevista.ToString("HH:mm")</span>
+                                    <span class="badge bg-secondary badge-estado">Hasta @v.FechaFin.ToString("dd/MM HH:mm")</span>
                                 </div>
                                 <p class="card-text text-muted mb-2">
                                     <strong>DNI:</strong> @v.Dni | <strong>Vehículo:</strong> @(v.Matricula ?? "A pie")<br/>
@@ -44,7 +44,7 @@
                                         <br/><small class="text-primary"><em>Obs: @v.Observaciones</em></small>
                                     }
                                 </p>
-                                <button class="btn btn-success btn-lg w-100 fw-bold py-2 shadow-sm" onclick="cambiarEstado(@v.Id, 1)">
+                                <button class="btn btn-success btn-lg w-100 fw-bold py-2 shadow-sm" onclick="cambiarEstado(@v.Id, 'ENTRADA')">
                                     ✔ REGISTRAR ENTRADA
                                 </button>
                             </div>
@@ -66,9 +66,9 @@
                     {
                         <div class="card mb-3 shadow-sm border-0 tarjeta-visita" id="visita-@v.Id">
                             <div class="card-body">
-                                <div class="d-flex justify-content-between">
+                                <div class="d-flex justify-content-between align-items-start">
                                     <h5 class="card-title fw-bold text-dark mb-1">@v.VisitanteEmpresa</h5>
-                                    <span class="badge bg-success">DENTRO</span>
+                                    <span class="badge bg-success badge-estado">DENTRO</span>
                                 </div>
                                 <p class="card-text text-muted mb-2">
                                     <strong>DNI:</strong> @v.Dni | <strong>Vehículo:</strong> @(v.Matricula ?? "A pie")<br/>
@@ -78,7 +78,7 @@
                                         <br/><small class="text-primary"><em>Obs: @v.Observaciones</em></small>
                                     }
                                 </p>
-                                <button class="btn btn-warning btn-lg w-100 fw-bold py-2 shadow-sm" onclick="cambiarEstado(@v.Id, 2)">
+                                <button class="btn btn-warning btn-lg w-100 fw-bold py-2 shadow-sm" onclick="cambiarEstado(@v.Id, 'SALIDA')">
                                     ➜ REGISTRAR SALIDA
                                 </button>
                             </div>
@@ -93,13 +93,12 @@
 @section Scripts {
     <script src="~/js/signalr.min.js"></script>
     <script>
-        // 1. Conexión WebSocket vía SignalR
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("/accesosHub")
             .withAutomaticReconnect()
             .build();
 
-        // 2. Escuchar alta de nueva visita desde el supervisor en tiempo real
+        // 1. Alta de visita recibida desde el supervisor
         connection.on("NuevaVisitaCreada", function (v) {
             const contenedor = document.getElementById("col-previstos");
             
@@ -111,16 +110,16 @@
             const htmlCard = `
                 <div class="card mb-3 shadow-sm border-0 tarjeta-visita" id="visita-${v.id}">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between align-items-start">
                             <h5 class="card-title fw-bold text-dark mb-1">${v.visitanteEmpresa}</h5>
-                            <span class="badge bg-secondary">Previsto ${v.horaPrevista}</span>
+                            <span class="badge bg-secondary badge-estado">Hasta ${v.fechaFin}</span>
                         </div>
                         <p class="card-text text-muted mb-2">
                             <strong>DNI:</strong> ${v.dni} | <strong>Vehículo:</strong> ${v.matricula}<br/>
                             <strong>Destino:</strong> ${v.contactoDestino}
                             ${obsHtml}
                         </p>
-                        <button class="btn btn-success btn-lg w-100 fw-bold py-2 shadow-sm" onclick="cambiarEstado(${v.id}, 1)">
+                        <button class="btn btn-success btn-lg w-100 fw-bold py-2 shadow-sm" onclick="cambiarEstado(${v.id}, 'ENTRADA')">
                             ✔ REGISTRAR ENTRADA
                         </button>
                     </div>
@@ -130,7 +129,7 @@
             actualizarContadores();
         });
 
-        // 3. Escuchar nuevo aviso publicado
+        // 2. Nuevo comunicado publicado
         connection.on("NuevoAvisoPublicado", function (a) {
             const lista = document.getElementById("lista-avisos");
             const esUrgente = a.prioridad === "Urgente";
@@ -146,44 +145,61 @@
             lista.insertAdjacentHTML('afterbegin', htmlAviso);
         });
 
-        // 4. Escuchar aviso retirado desde el panel de supervisor
+        // 3. Comunicado retirado manualmente
         connection.on("AvisoRetirado", function (id) {
             const aviso = document.getElementById("aviso-" + id);
             if (aviso) aviso.remove();
         });
 
-        // 5. Escuchar cambio de estado (Entrada / Salida)
+        // 4. Actualización de estado en tiempo real (Soporte multiría)
         connection.on("VisitaActualizada", function (data) {
             const card = document.getElementById("visita-" + data.visitaId);
             if (!card) return;
 
-            if (data.nuevoEstado === 1) { // Pasa a En Recinto
+            if (data.tipoMovimiento === "ENTRADA") {
                 document.getElementById("col-enrecinto").prepend(card);
                 const btn = card.querySelector("button");
                 btn.className = "btn btn-warning btn-lg w-100 fw-bold py-2 shadow-sm";
                 btn.innerText = "➜ REGISTRAR SALIDA";
-                btn.setAttribute("onclick", `cambiarEstado(${data.visitaId}, 2)`);
+                btn.setAttribute("onclick", `cambiarEstado(${data.visitaId}, 'SALIDA')`);
                 
-                const badge = card.querySelector(".badge");
+                const badge = card.querySelector(".badge-estado");
                 if (badge) {
-                    badge.className = "badge bg-success";
+                    badge.className = "badge bg-success badge-estado";
                     badge.innerText = "DENTRO";
                 }
-            } else if (data.nuevoEstado === 2) { // Pasa a Salida
-                card.remove();
+            } 
+            else if (data.tipoMovimiento === "SALIDA") {
+                if (data.sigueVigente) {
+                    // La autorización sigue activa: regresa a la columna 1 para reentrada futura
+                    document.getElementById("col-previstos").prepend(card);
+                    const btn = card.querySelector("button");
+                    btn.className = "btn btn-success btn-lg w-100 fw-bold py-2 shadow-sm";
+                    btn.innerText = "✔ REGISTRAR ENTRADA";
+                    btn.setAttribute("onclick", `cambiarEstado(${data.visitaId}, 'ENTRADA')`);
+                    
+                    const badge = card.querySelector(".badge-estado");
+                    if (badge) {
+                        badge.className = "badge bg-secondary badge-estado";
+                        badge.innerText = "Hasta " + data.fechaFinStr;
+                    }
+                } else {
+                    // Autorización expirada por completo
+                    card.remove();
+                }
             }
             actualizarContadores();
         });
 
         connection.start().catch(err => console.error(err.toString()));
 
-        // 6. Enviar petición para registrar Entrada o Salida
-        async function cambiarEstado(visitaId, nuevoEstado) {
+        // Envío de la acción (ENTRADA o SALIDA) al backend
+        async function cambiarEstado(visitaId, accion) {
             try {
                 await fetch('/api/visitas/cambiar-estado', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ visitaId: visitaId, nuevoEstado: nuevoEstado, operador: 'Garita' })
+                    body: JSON.stringify({ visitaId: visitaId, accion: accion, operador: 'Garita' })
                 });
             } catch (error) {
                 alert("Error de comunicación con el servidor.");

@@ -49,8 +49,12 @@
                                 <input asp-for="NuevaVisita.ContactoDestino" class="form-control" required />
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Fecha/Hora Prevista</label>
-                                <input asp-for="NuevaVisita.FechaHoraPrevista" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" step="60" class="form-control" required />
+                                <label class="form-label fw-semibold">Autorizado Desde</label>
+                                <input asp-for="NuevaVisita.FechaInicio" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" required />
+                            </div>    
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Autorizado Hasta</label>
+                                <input asp-for="NuevaVisita.FechaFin" type="datetime-local" asp-format="{0:yyyy-MM-ddTHH:mm}" class="form-control" required />
                             </div>
                         </div>
 

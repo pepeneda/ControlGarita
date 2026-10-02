@@ -34,7 +34,8 @@ public class SupervisorModel : PageModel
     public async Task OnGetAsync()
     {
         var ahora = DateTime.Now;
-        NuevaVisita.FechaHoraPrevista = new DateTime(ahora.Year, ahora.Month, ahora.Day, ahora.Hour, ahora.Minute, 0);
+        NuevaVisita.FechaInicio = ahora;
+        NuevaVisita.FechaFin = DateTime.Today.AddDays(7).AddHours(20); // 7 días de pase por defecto;
         NuevoComunicado.FechaExpiracion = DateTime.Today.AddDays(1).AddHours(8); // Por defecto mañana a las 08:00
 
         // Cargar solo avisos activos no caducados
@@ -65,7 +66,8 @@ public class SupervisorModel : PageModel
             dni = NuevaVisita.Dni,
             matricula = NuevaVisita.Matricula ?? "A pie",
             contactoDestino = NuevaVisita.ContactoDestino,
-            horaPrevista = NuevaVisita.FechaHoraPrevista.ToString("HH:mm"),
+            fechaInicio = NuevaVisita.FechaInicio.ToString("dd/MM HH:mm"),
+            fechaFin = NuevaVisita.FechaFin.ToString("dd/MM HH:mm"),
             observaciones = NuevaVisita.Observaciones ?? ""
         });
 

@@ -4,9 +4,9 @@ namespace ControlGarita.Models;
 
 public enum EstadoAcceso
 {
-    Previsto = 0,
-    EnRecinto = 1,
-    Salida = 2
+    Previsto = 0,    // Autorizado y pendiente de entrar (o fuera del recinto)
+    EnRecinto = 1,   // Dentro de las instalaciones
+    Completada = 2   // Autorización expirada o finalizada definitivamente
 }
 
 public class Visita
@@ -24,12 +24,13 @@ public class Visita
     [Required(ErrorMessage = "Indica el contacto o dependencia de destino")]
     public string ContactoDestino { get; set; } = string.Empty;
 
-    public DateTime FechaHoraPrevista { get; set; } = DateTime.Now;
+    // Rango de fechas de autorización
+    public DateTime FechaInicio { get; set; } = DateTime.Today;
+    public DateTime FechaFin { get; set; } = DateTime.Today.AddDays(1).AddTicks(-1); // Fin del día por defecto
 
     public EstadoAcceso Estado { get; set; } = EstadoAcceso.Previsto;
 
     public string? NumeroPase { get; set; }
-
     public string? Observaciones { get; set; }
 
     public List<RegistroLog>? Logs { get; set; } = new();
@@ -53,14 +54,9 @@ public class Comunicado
 
     [Required]
     public string Titulo { get; set; } = string.Empty;
-
     public string Detalle { get; set; } = string.Empty;
-
     public DateTime FechaPublicacion { get; set; } = DateTime.Now;
-    
-    // Caducidad automática: por defecto al final del día
     public DateTime FechaExpiracion { get; set; } = DateTime.Today.AddDays(1).AddTicks(-1);
-
     public bool Activo { get; set; } = true;
-    public string Prioridad { get; set; } = "Normal"; // Normal, Urgente
+    public string Prioridad { get; set; } = "Normal";
 }
