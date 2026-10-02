@@ -1,0 +1,19 @@
+@page
+@{
+    ViewData["Title"] = "Acceso Denegado";
+}
+
+<div class="row justify-content-center pt-5">
+    <div class="col-md-6 text-center">
+        <div class="card shadow border-danger">
+            <div class="card-body p-5">
+                <h1 class="display-4 text-danger fw-bold">Acceso Denegado</h1>
+                <p class="lead mt-3">
+                    Tu cuenta actual no pertenece al grupo de seguridad requerido en Active Directory ni tiene autorización para ver este panel.
+                </p>
+                <hr />
+                <a asp-page="/Index" class="btn btn-primary mt-2">Volver al Puesto de Guardia</a>
+            </div>
+        </div>
+    </div>
+</div>

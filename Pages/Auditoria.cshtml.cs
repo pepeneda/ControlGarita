@@ -2,9 +2,11 @@ using ControlGarita.Data;
 using ControlGarita.Models;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ControlGarita.Pages;
 
+[Authorize(Policy = "SoloSupervisores")]
 public class AuditoriaModel : PageModel
 {
     private readonly AppDbContext _context;

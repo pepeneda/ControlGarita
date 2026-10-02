@@ -5,9 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ControlGarita.Pages;
-
+[Authorize(Policy = "SoloSupervisores")]
 public class SupervisorModel : PageModel
 {
     private readonly AppDbContext _context;
